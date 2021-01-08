@@ -38,10 +38,10 @@ namespace Chireiden.SEconomy.Ranking
                 foreach (var i in level.AllowedItems)
                 {
                     var itembanName = Terraria.Lang.GetItemNameValue(i);
-                    if (!TShock.Itembans.ItemIsBanned(itembanName))
+                    if (!TShock.ItemBans.DataModel.ItemIsBanned(itembanName))
                     {
                         ir++;
-                        TShock.Itembans.AddNewBan(itembanName);
+                        TShock.ItemBans.DataModel.AddNewBan(itembanName);
                     }
                 }
             }
@@ -64,9 +64,9 @@ namespace Chireiden.SEconomy.Ranking
 
         private void InitDefault(CommandArgs args)
         {
-            TShock.Groups.AddPermissions("default", new List<string> {"seconomy.world.mobgains"});
-            TShock.Groups.AddPermissions("default", new List<string> {config.ViewLevelPermission});
-            TShock.Groups.AddPermissions("default", new List<string> {config.RankPermission});
+            TShock.Groups.AddPermissions("default", new List<string> { "seconomy.world.mobgains" });
+            TShock.Groups.AddPermissions("default", new List<string> { config.ViewLevelPermission });
+            TShock.Groups.AddPermissions("default", new List<string> { config.RankPermission });
         }
 
         private void ViewLevel(CommandArgs args)
@@ -99,68 +99,68 @@ namespace Chireiden.SEconomy.Ranking
             switch (nextLevel.Count())
             {
                 case 0:
-                {
-                    if (GetLevel(p.Group) != null)
                     {
-                        p.SendInfoMessage(config.Messages["MaxLevel"]);
-                        return;
-                    }
+                        if (GetLevel(p.Group) != null)
+                        {
+                            p.SendInfoMessage(config.Messages["MaxLevel"]);
+                            return;
+                        }
 
-                    var nl = config.Levels.Single(l => l.Parents.Count == 0);
-                    p.SendInfoMessage(tryNextLevel
-                        ? Move(p, nl, GetLevel(p.Group))
-                            ? config.Messages["RankStart"]
-                            : config.Messages["RankFail"]
-                        : config.Messages["NotInRank"]);
-                    break;
-                }
+                        var nl = config.Levels.Single(l => l.Parents.Count == 0);
+                        p.SendInfoMessage(tryNextLevel
+                            ? Move(p, nl, GetLevel(p.Group))
+                                ? config.Messages["RankStart"]
+                                : config.Messages["RankFail"]
+                            : config.Messages["NotInRank"]);
+                        break;
+                    }
                 case 1:
-                {
-                    if (tryNextLevel)
                     {
-                        if (!Move(p, nextLevel.First(), GetLevel(p.Group)))
+                        if (tryNextLevel)
                         {
-                            p.SendInfoMessage(config.Messages["RankFail"]);
+                            if (!Move(p, nextLevel.First(), GetLevel(p.Group)))
+                            {
+                                p.SendInfoMessage(config.Messages["RankFail"]);
+                            }
                         }
-                    }
-                    else
-                    {
-                        p.SendInfoMessage(InfoPlayer(p, nextLevel.First(), GetLevel(p.Group),
-                            config.Messages["ViewLevel"]));
-                    }
+                        else
+                        {
+                            p.SendInfoMessage(InfoPlayer(p, nextLevel.First(), GetLevel(p.Group),
+                                config.Messages["ViewLevel"]));
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 default:
-                {
-                    if (args.Count > 0)
                     {
-                        var selected = nextLevel.Where(l => l.DisplayName == args[0]);
-                        if (!selected.Any())
+                        if (args.Count > 0)
                         {
-                            p.SendInfoMessage(config.Messages["NoMatchClass"]);
+                            var selected = nextLevel.Where(l => l.DisplayName == args[0]);
+                            if (!selected.Any())
+                            {
+                                p.SendInfoMessage(config.Messages["NoMatchClass"]);
+                            }
+                            else if (selected.Count() > 1)
+                            {
+                                p.SendInfoMessage(config.Messages["MultiMatchClass"]);
+                            }
+                            else if (!Move(p, selected.First(), GetLevel(p.Group)))
+                            {
+                                p.SendInfoMessage(config.Messages["RankFail"]);
+                            }
                         }
-                        else if (selected.Count() > 1)
+                        else
                         {
-                            p.SendInfoMessage(config.Messages["MultiMatchClass"]);
+                            var currentClass = p.Group.Name.Split('_')[0];
+                            p.SendInfoMessage(InfoPlayer(p, null, GetLevel(p.Group),
+                                config.Messages["ViewLevel"]));
+                            p.SendInfoMessage(string.Join("\r\n", nextLevel.Select(l =>
+                                string.Format(config.Messages["ClassFormat"], l.DisplayName,
+                                    l.Description, l.Parents[currentClass]))));
                         }
-                        else if (!Move(p, selected.First(), GetLevel(p.Group)))
-                        {
-                            p.SendInfoMessage(config.Messages["RankFail"]);
-                        }
-                    }
-                    else
-                    {
-                        var currentClass = p.Group.Name.Split('_')[0];
-                        p.SendInfoMessage(InfoPlayer(p, null, GetLevel(p.Group),
-                            config.Messages["ViewLevel"]));
-                        p.SendInfoMessage(string.Join("\r\n", nextLevel.Select(l =>
-                            string.Format(config.Messages["ClassFormat"], l.DisplayName,
-                                l.Description, l.Parents[currentClass]))));
-                    }
 
-                    break;
-                }
+                        break;
+                    }
             }
         }
 
@@ -225,12 +225,12 @@ namespace Chireiden.SEconomy.Ranking
                 foreach (var valueAllowedItem in level.AllowedItems)
                 {
                     var itembanName = Terraria.Lang.GetItemNameValue(valueAllowedItem);
-                    if (!TShock.Itembans.ItemIsBanned(itembanName))
+                    if (!TShock.ItemBans.DataModel.ItemIsBanned(itembanName))
                     {
-                        TShock.Itembans.AddNewBan(itembanName);
+                        TShock.ItemBans.DataModel.AddNewBan(itembanName);
                     }
 
-                    TShock.Itembans.AllowGroup(itembanName, nextLevel);
+                    TShock.ItemBans.DataModel.AllowGroup(itembanName, nextLevel);
                 }
             }
         }
@@ -275,7 +275,7 @@ namespace Chireiden.SEconomy.Ranking
                 currentGroupName[0] = newLevel.TsGroup + "_" + currentGroupName[0];
             }
 
-            TShock.Users.SetUserGroup(p.User, string.Join("_", currentGroupName));
+            TShock.UserAccounts.SetUserGroup(p.Account, string.Join("_", currentGroupName));
             newLevel.LevelUpCommand.ForEach(f => Pli(TSPlayer.Server, ParseCommand(p, newLevel, oldLevel, f)));
             newLevel.LevelUpInvoke.ForEach(f => Pli(p, ParseCommand(p, newLevel, oldLevel, f)));
             return true;
@@ -325,7 +325,7 @@ namespace Chireiden.SEconomy.Ranking
                 return;
             }
 
-            var args = (List<string>) ParseParameters?.Invoke(null, new object[] {text.Remove(0, 1)});
+            var args = (List<string>)ParseParameters?.Invoke(null, new object[] { text.Remove(0, 1) });
             if (args == null || args.Count < 1)
             {
                 return;
